@@ -74,7 +74,7 @@
 
 <p>If you installed cassandra and didn't change any configuration related to authentication or SSL, you should be able to connect like this</p>
 
-<div class="highlight highlight-erlang"><pre><span class="nv">Client</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">new_client</span><span class="p">({}).</span>
+<div class="highlight highlight-erlang"><pre><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Client</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">new_client</span><span class="p">({}).</span>
 </pre></div>
 
 <p>And close the connection like this</p>
@@ -87,7 +87,7 @@
 <li><p>The second possible argument (when using <code>cqerl:new_client/2</code>) is a list of options, that include <code>auth</code> (mentionned below), <code>ssl</code> (which is <code>false</code> by default, but can be set to a list of SSL options) and <code>keyspace</code> (string or binary). Other options include <code>pool_max_size</code>, <code>pool_min_size</code> and <code>pool_cull_interval</code>, which are used to configure <a href="https://github.com/seth/pooler">pooler</a> (see its documentation to understand those options).</p></li>
 </ol><p>If you've set simple username/password authentication scheme on Cassandra, you can provide those to CQErl</p>
 
-<div class="highlight highlight-erlang"><pre><span class="nv">Client</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">new_client</span><span class="p">({},</span> <span class="p">[{</span><span class="n">auth</span><span class="p">,</span> <span class="p">{</span><span class="n">cqerl_auth_plain_handler</span><span class="p">,</span> <span class="p">[{</span><span class="s">"test"</span><span class="p">,</span> <span class="s">"aaa"</span><span class="p">}]}}]).</span>
+<div class="highlight highlight-erlang"><pre><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Client</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">new_client</span><span class="p">({},</span> <span class="p">[{</span><span class="n">auth</span><span class="p">,</span> <span class="p">{</span><span class="n">cqerl_auth_plain_handler</span><span class="p">,</span> <span class="p">[{</span><span class="s">"test"</span><span class="p">,</span> <span class="s">"aaa"</span><span class="p">}]}}]).</span>
 </pre></div>
 
 <p>Since Cassandra implements pluggable authentication mechanisms, CQErl also allows you to provide custom authentication modules (here <code>cqerl_auth_plain_handler</code>). The options you pass along with it are given to the module's <code>auth_init/3</code> as its first argument.</p>
