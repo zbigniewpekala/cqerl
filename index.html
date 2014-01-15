@@ -66,7 +66,9 @@
 <li>Automatic compression (using lz4 or snappy if available)</li>
 <li>SSL support</li>
 <li>Pluggable authentication (as long as it's <a href="http://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer">SASL</a>-based)</li>
-</ul><h3>
+</ul><p>CQErl was designed to be as simple as possible on your side. You just provide the configuration you want as environment variables, and ask for a new client everytime you need to perform a transient piece of work (e.g. handle a web request). You do not need to (and should not) keep a client in state for a long time. Under the hood, CQErl maintains a pool of persistent connections with Cassandra and this pattern is the best way to ensure proper load balancing of requests across the pool.</p>
+
+<h3>
 <a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h3>
 
 <h5>
@@ -130,6 +132,17 @@
         <span class="n">ok</span>
 <span class="k">end</span><span class="p">.</span>
 </pre></div>
+
+<p>In situations where you do not need to wait for the response at all, it's perfectly fine to produce this sort of pattern:</p>
+
+<div class="highlight highlight-erlang"><pre><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Client</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">new_client</span><span class="p">(),</span>
+<span class="nn">cqerl</span><span class="p">:</span><span class="nf">send_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="nl">#cql_query</span><span class="p">{</span><span class="k">query</span><span class="o">=</span><span class="s">"UPDATE secrets SET value = null WHERE id = ?;"</span><span class="p">,</span>
+                                    <span class="n">values</span><span class="o">=</span><span class="p">[{</span><span class="n">id</span><span class="p">,</span> <span class="o">&lt;&lt;</span><span class="s">"42"</span><span class="o">&gt;&gt;</span><span class="p">}]}),</span>
+<span class="nn">cqerl</span><span class="p">:</span><span class="nf">close_client</span><span class="p">(</span><span class="nv">Client</span><span class="p">).</span>
+</pre></div>
+
+<p>That is, you can grab a client only the send a query, then you can get rid of it. CQErl will still perform it,
+the difference being that no response will be sent back to you.</p>
 
 <p>Here's a rundown of the possible return values</p>
 
