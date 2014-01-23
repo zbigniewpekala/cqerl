@@ -4,30 +4,40 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <title>Cqerl by matehat</title>
-
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
     <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
   </head>
   <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/matehat/cqerl">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/matehat/cqerl/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/matehat/cqerl/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
     <div class="wrapper">
-      <header>
-        <h1>Cqerl</h1>
-        <p>Native Erlang CQL driver</p>
 
-        <p class="view"><a href="https://github.com/matehat/cqerl">View the Project on GitHub <small>matehat/cqerl</small></a></p>
-
-
-        <ul>
-          <li><a href="https://github.com/matehat/cqerl/zipball/master">Download <strong>ZIP File</strong></a></li>
-          <li><a href="https://github.com/matehat/cqerl/tarball/master">Download <strong>TAR Ball</strong></a></li>
-          <li><a href="https://github.com/matehat/cqerl">View On <strong>GitHub</strong></a></li>
-        </ul>
-      </header>
       <section>
+        <div id="title">
+          <h1>Cqerl</h1>
+          <p>Native Erlang CQL driver</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/matehat">matehat</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
+        </div>
+
         <h1>
 <a name="cqerl" class="anchor" href="#cqerl"><span class="octicon octicon-link"></span></a>CQErl</h1>
 
@@ -111,7 +121,7 @@
 <span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Result</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">run_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="o">&lt;&lt;</span><span class="s">"SELECT * FROM users;"</span><span class="o">&gt;&gt;</span><span class="p">).</span>
 
 <span class="c">% Also equivalent to</span>
-<span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Result</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">run_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="nl">#cql_query</span><span class="p">{</span><span class="k">query</span> <span class="o">=</span> <span class="o">&lt;&lt;</span><span class="s">"SELECT * FROM users;"</span><span class="o">&gt;&gt;</span><span class="p">}).</span>
+<span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Result</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">run_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="nl">#cql_query</span><span class="p">{</span><span class="n">statement</span> <span class="o">=</span> <span class="o">&lt;&lt;</span><span class="s">"SELECT * FROM users;"</span><span class="o">&gt;&gt;</span><span class="p">}).</span>
 </pre></div>
 
 <p>It can also be performed asynchronously using</p>
@@ -126,7 +136,7 @@
 <p>In situations where you do not need to wait for the response at all, it's perfectly fine to produce this sort of pattern:</p>
 
 <div class="highlight highlight-erlang"><pre><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Client</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">new_client</span><span class="p">(),</span>
-<span class="nn">cqerl</span><span class="p">:</span><span class="nf">send_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="nl">#cql_query</span><span class="p">{</span><span class="k">query</span><span class="o">=</span><span class="s">"UPDATE secrets SET value = null WHERE id = ?;"</span><span class="p">,</span>
+<span class="nn">cqerl</span><span class="p">:</span><span class="nf">send_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="nl">#cql_query</span><span class="p">{</span><span class="n">statement</span><span class="o">=</span><span class="s">"UPDATE secrets SET value = null WHERE id = ?;"</span><span class="p">,</span>
                                     <span class="n">values</span><span class="o">=</span><span class="p">[{</span><span class="n">id</span><span class="p">,</span> <span class="o">&lt;&lt;</span><span class="s">"42"</span><span class="o">&gt;&gt;</span><span class="p">}]}),</span>
 <span class="nn">cqerl</span><span class="p">:</span><span class="nf">close_client</span><span class="p">(</span><span class="nv">Client</span><span class="p">).</span>
 </pre></div>
@@ -151,7 +161,7 @@ the difference being that no response will be sent back to you.</p>
 
 <div class="highlight highlight-erlang"><pre><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="p">_</span><span class="nv">SchemaChange</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">run_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="s">"CREATE TABLE users(id uuid, name varchar, password varchar);"</span><span class="p">),</span>
 <span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="n">void</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">run_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="nl">#cql_query</span><span class="p">{</span>
-    <span class="k">query</span> <span class="o">=</span> <span class="s">"INSERT INTO users(id, name, password) VALUES(?, ?, ?);"</span><span class="p">,</span>
+    <span class="n">statement</span> <span class="o">=</span> <span class="s">"INSERT INTO users(id, name, password) VALUES(?, ?, ?);"</span><span class="p">,</span>
     <span class="n">values</span> <span class="o">=</span> <span class="p">[</span>
         <span class="p">{</span><span class="n">id</span><span class="p">,</span> <span class="n">new</span><span class="p">},</span>
         <span class="p">{</span><span class="n">name</span><span class="p">,</span> <span class="s">"matt"</span><span class="p">},</span>
@@ -254,7 +264,7 @@ the difference being that no response will be sent back to you.</p>
 <li>The <code>consistency</code> level to apply when executing the batch of queries.</li>
 <li>The <code>mode</code> of the batch, which can be <code>?CQERL_BATCH_LOGGED</code>, <code>?CQERL_BATCH_UNLOGGED</code> or <code>?CQERL_BATCH_COUNTER</code> (declared in <a href="include/cqerl.hrl"><code>include/cqerl.hrl</code></a>). Running a batch in <em>unlogged</em> mode removes the performance penalty of enforcing atomicity. The <em>counter</em> mode should be used to perform batched mutation of counter values.</li>
 <li>Finally, you must specify the list of <code>queries</code>.</li>
-</ol><div class="highlight highlight-erlang"><pre><span class="nv">InsertQ</span> <span class="o">=</span> <span class="nl">#cql_query</span><span class="p">{</span><span class="k">query</span> <span class="o">=</span> <span class="s">"INSERT INTO users(id, name, password) VALUES(?, ?, ?);"</span><span class="p">},</span>
+</ol><div class="highlight highlight-erlang"><pre><span class="nv">InsertQ</span> <span class="o">=</span> <span class="nl">#cql_query</span><span class="p">{</span><span class="n">statement</span> <span class="o">=</span> <span class="s">"INSERT INTO users(id, name, password) VALUES(?, ?, ?);"</span><span class="p">},</span>
 <span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="n">void</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">run_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="nl">#cql_query_batch</span><span class="p">{</span>
   <span class="n">mode</span><span class="o">=?</span><span class="nv">CQERL_BATCH_UNLOGGED</span><span class="p">,</span>
   <span class="n">queries</span><span class="o">=</span><span class="p">[</span>
@@ -407,12 +417,9 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
       </section>
-      <footer>
-        <p>This project is maintained by <a href="https://github.com/matehat">matehat</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
-      </footer>
+
     </div>
-    <script src="javascripts/scale.fix.js"></script>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
     
   </body>
 </html>
