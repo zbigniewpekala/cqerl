@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>CQErl by matehat</title>
+    <title>Cqerl by matehat</title>
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
@@ -31,7 +31,7 @@
 
       <section>
         <div id="title">
-          <h1>CQErl</h1>
+          <h1>Cqerl</h1>
           <p>Native Erlang CQL driver</p>
           <hr>
           <span class="credits left">Project maintained by <a href="https://github.com/matehat">matehat</a></span>
@@ -213,14 +213,8 @@ the difference being that no response will be sent back to you.</p>
 <p>When performing queries, you can provide more information than just the query statement using the <code>#cql_query{}</code> record, which includes the following fields:</p>
 
 <ol>
-<li>The <code>query</code> statement, as a string or binary</li>
-<li>
-<p><code>values</code> for binding variables from the query statement. This is a <code>proplists</code>, where the keys match the column names or binding variable names in the statement, in <strong>lowercase</strong>. Special cases include providing <code>TTL</code> and <code>TIMESTAMP</code> option in statements, in which case the proplist key would be <code>[ttl]</code> and <code>[timestamp]</code> respectively.</p>
-
-<p>Also, when providing the value for a <code>uuid</code>-type column, you can give the value <code>new</code>, <code>strong</code> or <code>weak</code>, in which case CQErl will generate a random UUID (v4), with either a <em>strong</em> or <em>weak</em> number random generator.</p>
-
-<p>Finally, when providing the value for a <code>timeuuid</code> or <code>timestamp</code> column, you can give the value <code>now</code>, in which case CQErl will generate a normal timestamp, or a UUID (v1) matching the current date and time.</p>
-</li>
+<li>The query <code>statement</code>, as a string or binary</li>
+<li><p><code>values</code> for binding variables from the query statement (see next section).</p></li>
 <li><p>You can tell CQErl to consider a query <code>reusable</code> or not (see below for what that means). By default, it will detect binding variables and consider it reusable if it contains (named or not) any. Queries containing <em>named</em> binding variables will be considered reusable no matter what you set <code>reusable</code> to. If you explicitely set <code>reusable</code> to <code>false</code> on a query having positional variable bindings (<code>?</code>), you would provide values with in <code>{Type, Value}</code> pairs instead of <code>{Key, Value}</code>. </p></li>
 <li>You can specify how many rows you want in every result page using the <code>page_size</code> (integer) field. The devs at Cassandra recommend a value of 100 (which is the default).</li>
 <li>
@@ -256,6 +250,30 @@ the difference being that no response will be sent back to you.</p>
 </ul>
 </li>
 </ol><h5>
+<a name="variable-bindings" class="anchor" href="#variable-bindings"><span class="octicon octicon-link"></span></a>Variable bindings</h5>
+
+<p>In the <code>#cql_query{}</code> record, you can provide <code>values</code> as a <code>proplists</code>, where the keys match the column names or binding variable names in the statement, in <strong>lowercase</strong>. </p>
+
+<p>Special cases include: </p>
+
+<ul>
+<li>providing <code>TTL</code> and <code>TIMESTAMP</code> option in statements, in which case the proplist key would be <code>[ttl]</code> and <code>[timestamp]</code> respectively. Note that, while values for a column of type <code>timestamp</code> are provided in <strong>milliseconds</strong>, a value for the <code>TIMESTAMP</code> option is expected in <strong>microseconds</strong>.</li>
+<li>
+<code>UPDATE keyspace SET set = set + ? WHERE id = 1;</code>. The name for this variable binding is <code>set</code>, the name of the column, and it's expected to be an erlang <strong>list</strong> of values.</li>
+<li>
+<code>UPDATE keyspace SET list = list + ? WHERE id = 1;</code>. The name for this variable binding is <code>list</code>, the name of the column, and it's expected to be an erlang <strong>list</strong> of values.</li>
+<li>
+<code>UPDATE keyspace SET map[?] = 1 WHERE id = 1;</code>. The name for this variable binding is <code>key(map)</code>, where <code>map</code> is the name of the column.</li>
+<li>
+<code>UPDATE keyspace SET map['key'] = ? WHERE id = 1;</code>. The name for this variable binding is <code>value(map)</code>, where <code>map</code> is the name of the column.</li>
+<li>
+<p><code>UPDATE keyspace SET list[?] = 1 WHERE id = 1;</code>. The name for this variable binding is <code>idx(list)</code>, where <code>list</code> is the name of the column.</p>
+
+<p>Also, when providing the value for a <code>uuid</code>-type column, you can give the value <code>new</code>, <code>strong</code> or <code>weak</code>, in which case CQErl will generate a random UUID (v4), with either a <em>strong</em> or <em>weak</em> number random generator.</p>
+
+<p>Finally, when providing the value for a <code>timeuuid</code> or <code>timestamp</code> column, you can give the value <code>now</code>, in which case CQErl will generate a normal timestamp, or a UUID (v1) matching the current date and time.</p>
+</li>
+</ul><h5>
 <a name="batched-queries" class="anchor" href="#batched-queries"><span class="octicon octicon-link"></span></a>Batched queries</h5>
 
 <p>To perform batched queries (which can include any non-<code>SELECT</code> <a href="http://en.wikipedia.org/wiki/Data_manipulation_language">DML</a> statements), simply put one or more <code>#cql_query{}</code> records in a <code>#cql_query_batch{}</code> record, and run it in place of a normal <code>#cql_query{}</code>. <code>#cql_query_batch{}</code> include the following fields:</p>
@@ -347,7 +365,7 @@ the difference being that no response will be sent back to you.</p>
 <tr>
 <td>timestamp</td>
 <td>
-<strong>integer</strong> (signed 64-bit), <code>now</code>, <a href="http://www.datastax.com/documentation/cql/3.0/webhelp/index.html#cql/cql_reference/cql_data_types_c.html#reference_ds_dsf_555_yj">binary or string</a>
+<strong>integer</strong> (milliseconds, signed 64-bit), <code>now</code>, <a href="http://www.datastax.com/documentation/cql/3.0/webhelp/index.html#cql/cql_reference/cql_data_types_c.html#reference_ds_dsf_555_yj">binary or string</a>
 </td>
 </tr>
 <tr>
