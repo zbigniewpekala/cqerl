@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <title>Cqerl by matehat</title>
     <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <link rel="stylesheet" href="stylesheets/github-dark.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
     <script src="javascripts/respond.js"></script>
     <!--[if lt IE 9]>
@@ -39,18 +39,16 @@
         </div>
 
         <h1>
-<a name="cqerl" class="anchor" href="#cqerl"><span class="octicon octicon-link"></span></a>CQErl</h1>
+<a id="cqerl" class="anchor" href="#cqerl" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>CQErl</h1>
 
-<p>Native Erlang client for CQL3 over Cassandra's binary protocol v2 (a.k.a. what you want as a client for Cassandra).</p>
+<p>Native Erlang client for CQL3 over Cassandra's binary protocol v4 (a.k.a. what you want as a client for Cassandra).</p>
 
 <p><a href="#usage"><strong>Usage</strong></a> · <a href="#connecting">Connecting</a> · <a href="#performing-queries">Performing queries</a> · <a href="#providing-options-along-queries">Query options</a> · <a href="#batched-queries">Batched queries</a> · <a href="#reusable-queries">Reusable queries</a> · <a href="#data-types">Data types</a></p>
 
-<p><a href="#installation"><strong>Installation</strong></a> · <a href="#tests"><strong>Tests</strong></a> · <a href="#license"><strong>License</strong></a></p>
-
-<hr><p><em>This project is still relatively new and is under active development, so you are welcome to contribute to it with improvements, suggestions and any issues you encounter.</em></p>
+<p><a href="#installation"><strong>Installation</strong></a> · <a href="#compatibility"><strong>Compatibility</strong></a> · <a href="#tests"><strong>Tests</strong></a> · <a href="#license"><strong>License</strong></a></p>
 
 <h3>
-<a name="at-a-glance" class="anchor" href="#at-a-glance"><span class="octicon octicon-link"></span></a>At a glance</h3>
+<a id="at-a-glance" class="anchor" href="#at-a-glance" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>At a glance</h3>
 
 <p>CQErl offers a simple Erlang interface to Cassandra using the latest CQL version (v3). The main features include:</p>
 
@@ -66,80 +64,77 @@
 <li>Automatic compression (using lz4 or snappy if available)</li>
 <li>SSL support</li>
 <li>Pluggable authentication (as long as it's <a href="http://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer">SASL</a>-based)</li>
-</ul><p>CQErl was designed to be as simple as possible on your side. You just provide the configuration you want as environment variables, and ask for a new client everytime you need to perform a transient piece of work (e.g. handle a web request). You do not need to (and should not) keep a client in state for a long time. Under the hood, CQErl maintains a pool of persistent connections with Cassandra and this pattern is the best way to ensure proper load balancing of requests across the pool.</p>
+</ul>
+
+<p>CQErl was designed to be as simple as possible on your side. You just provide the configuration you want as environment variables, and ask for a new client everytime you need to perform a transient piece of work (e.g. handle a web request). You do not need to (and should not) keep a client in state for a long time. Under the hood, CQErl maintains a pool of persistent connections with Cassandra and this pattern is the best way to ensure proper load balancing of requests across the pool.</p>
 
 <h3>
-<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h3>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h3>
 
 <h5>
-<a name="connecting" class="anchor" href="#connecting"><span class="octicon octicon-link"></span></a>Connecting</h5>
+<a id="connecting" class="anchor" href="#connecting" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Connecting</h5>
 
 <p>If you installed cassandra and didn't change any configuration related to authentication or SSL, you should be able to connect like this</p>
 
-<div class="highlight highlight-erlang"><pre><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Client</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">new_client</span><span class="p">({}).</span>
-</pre></div>
+<div class="highlight highlight-source-erlang"><pre>{<span class="pl-c1">ok</span>, <span class="pl-smi">Client</span>} <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">new_client</span>({}).</pre></div>
 
 <p>And close the connection like this</p>
 
-<div class="highlight highlight-erlang"><pre><span class="nn">cqerl</span><span class="p">:</span><span class="nf">close_client</span><span class="p">(</span><span class="nv">Client</span><span class="p">).</span>
-</pre></div>
+<div class="highlight highlight-source-erlang"><pre><span class="pl-en">cqerl</span>:<span class="pl-en">close_client</span>(<span class="pl-smi">Client</span>).</pre></div>
 
 <ol>
 <li><p>The first argument to <code>cqerl:new_client/2</code> or <code>cqerl_new_client/1</code> is the node to which you wish to connect as <code>{Ip, Port}</code>. If empty, it defaults to <code>{"127.0.0.1", 9042}</code>, and <code>Ip</code> can be given as a string, or as a tuple of components, either IPv4 or IPv6.</p></li>
 <li><p>The second possible argument (when using <code>cqerl:new_client/2</code>) is a list of options, that include <code>auth</code> (mentionned below), <code>ssl</code> (which is <code>false</code> by default, but can be set to a list of SSL options) and <code>keyspace</code> (string or binary). Other options include <code>pool_max_size</code>, <code>pool_min_size</code> and <code>pool_cull_interval</code>, which are used to configure <a href="https://github.com/seth/pooler">pooler</a> (see its documentation to understand those options).</p></li>
-</ol><p>If you've set simple username/password authentication scheme on Cassandra, you can provide those to CQErl</p>
+</ol>
 
-<div class="highlight highlight-erlang"><pre><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Client</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">new_client</span><span class="p">({},</span> <span class="p">[{</span><span class="n">auth</span><span class="p">,</span> <span class="p">{</span><span class="n">cqerl_auth_plain_handler</span><span class="p">,</span> <span class="p">[{</span><span class="s">"test"</span><span class="p">,</span> <span class="s">"aaa"</span><span class="p">}]}}]).</span>
-</pre></div>
+<p>If you've set simple username/password authentication scheme on Cassandra, you can provide those to CQErl</p>
+
+<div class="highlight highlight-source-erlang"><pre>{<span class="pl-c1">ok</span>, <span class="pl-smi">Client</span>} <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">new_client</span>({}, [{<span class="pl-c1">auth</span>, {<span class="pl-c1">cqerl_auth_plain_handler</span>, [{<span class="pl-s"><span class="pl-pds">"</span>test<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>aaa<span class="pl-pds">"</span></span>}]}}]).</pre></div>
 
 <p>Since Cassandra implements pluggable authentication mechanisms, CQErl also allows you to provide custom authentication modules (here <code>cqerl_auth_plain_handler</code>). The options you pass along with it are given to the module's <code>auth_init/3</code> as its first argument.</p>
 
 <h6>
-<a name="using-environment-variables" class="anchor" href="#using-environment-variables"><span class="octicon octicon-link"></span></a>Using environment variables</h6>
+<a id="using-environment-variables" class="anchor" href="#using-environment-variables" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Using environment variables</h6>
 
 <p>All the options given above can be provided as environment variables, in which case they are used as default (and overridable) values to any <code>cqerl:new_client</code> calls. You can also provide a <code>cassandra_nodes</code> variable containing a list of the tuples used as the first argument to <code>cqerl:new_client</code>. So for example, in your <code>app.config</code> or <code>sys.config</code> file, you could have the following content:</p>
 
-<div class="highlight highlight-erlang"><pre><span class="p">[</span>
-  <span class="p">{</span><span class="n">cqerl</span><span class="p">,</span> <span class="p">[</span>
-            <span class="p">{</span><span class="n">cassandra_nodes</span><span class="p">,</span> <span class="p">[</span> <span class="p">{</span> <span class="s">"127.0.0.1"</span><span class="p">,</span> <span class="mi">9042</span> <span class="p">}</span> <span class="p">]},</span>
-            <span class="p">{</span><span class="n">ssl</span><span class="p">,</span> <span class="p">[</span> <span class="p">{</span><span class="n">cacertfile</span><span class="p">,</span> <span class="s">"cassandra.pem"</span><span class="p">}</span> <span class="p">]},</span>
-            <span class="p">{</span><span class="n">auth</span><span class="p">,</span> <span class="p">{</span><span class="n">cqerl_auth_plain_handler</span><span class="p">,</span> <span class="p">[</span> <span class="p">{</span><span class="s">"test"</span><span class="p">,</span> <span class="s">"aaa"</span><span class="p">}</span> <span class="p">]}}</span>
-          <span class="p">]},</span>
-<span class="p">]</span>
-</pre></div>
+<div class="highlight highlight-source-erlang"><pre>[
+  {<span class="pl-c1">cqerl</span>, [
+            {<span class="pl-c1">cassandra_nodes</span>, [ { <span class="pl-s"><span class="pl-pds">"</span>127.0.0.1<span class="pl-pds">"</span></span>, <span class="pl-c1">9042</span> } ]},
+            {<span class="pl-c1">ssl</span>, [ {<span class="pl-c1">cacertfile</span>, <span class="pl-s"><span class="pl-pds">"</span>cassandra.pem<span class="pl-pds">"</span></span>} ]},
+            {<span class="pl-c1">auth</span>, {<span class="pl-c1">cqerl_auth_plain_handler</span>, [ {<span class="pl-s"><span class="pl-pds">"</span>test<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>aaa<span class="pl-pds">"</span></span>} ]}}
+          ]},
+]</pre></div>
 
-<p>Doing so will fire up connection pools as soon as the CQErl application is started. So when later on you call <code>cqerl:new_client</code>, chances are you will hit a preallocated connection (unless they're so busy that CQErl needs to fire up new ones). In fact, if you provide the <code>cassandra_nodes</code> environment variable, you can call <code>cqerl:get_client/0</code>, which chooses an available client at random.</p>
+<p>Doing so will fire up connection pools as soon as the CQErl application is started. So when later on you call <code>cqerl:new_client</code>, chances are you will hit a preallocated connection (unless they're so busy that CQErl needs to fire up new ones). In fact, if you provide the <code>cassandra_nodes</code> environment variable, you can call <code>cqerl:new_client/0</code>, which chooses an available client at random.</p>
 
 <h5>
-<a name="performing-queries" class="anchor" href="#performing-queries"><span class="octicon octicon-link"></span></a>Performing queries</h5>
+<a id="performing-queries" class="anchor" href="#performing-queries" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Performing queries</h5>
 
 <p>Performing a query can be as simple as this:</p>
 
-<div class="highlight highlight-erlang"><pre><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Result</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">run_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="s">"SELECT * FROM users;"</span><span class="p">).</span>
+<div class="highlight highlight-source-erlang"><pre>{<span class="pl-c1">ok</span>, <span class="pl-smi">Result</span>} <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">run_query</span>(<span class="pl-smi">Client</span>, <span class="pl-s"><span class="pl-pds">"</span>SELECT * FROM users;<span class="pl-pds">"</span></span>).
 
-<span class="c">% Equivalent to</span>
-<span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Result</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">run_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="o">&lt;&lt;</span><span class="s">"SELECT * FROM users;"</span><span class="o">&gt;&gt;</span><span class="p">).</span>
+<span class="pl-c">% Equivalent to</span>
+{<span class="pl-c1">ok</span>, <span class="pl-smi">Result</span>} <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">run_query</span>(<span class="pl-smi">Client</span>, &lt;&lt;<span class="pl-s"><span class="pl-pds">"</span>SELECT * FROM users;<span class="pl-pds">"</span></span>&gt;&gt;).
 
-<span class="c">% Also equivalent to</span>
-<span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Result</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">run_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="nl">#cql_query</span><span class="p">{</span><span class="n">statement</span> <span class="o">=</span> <span class="o">&lt;&lt;</span><span class="s">"SELECT * FROM users;"</span><span class="o">&gt;&gt;</span><span class="p">}).</span>
-</pre></div>
+<span class="pl-c">% Also equivalent to</span>
+{<span class="pl-c1">ok</span>, <span class="pl-smi">Result</span>} <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">run_query</span>(<span class="pl-smi">Client</span>, <span class="pl-k">#</span><span class="pl-en">cql_query</span>{<span class="pl-smi">statement</span> <span class="pl-k">=</span> &lt;&lt;<span class="pl-s"><span class="pl-pds">"</span>SELECT * FROM users;<span class="pl-pds">"</span></span>&gt;&gt;}).</pre></div>
 
 <p>It can also be performed asynchronously using</p>
 
-<div class="highlight highlight-erlang"><pre><span class="nv">Tag</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">send_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="s">"SELECT * FROM users;"</span><span class="p">),</span>
-<span class="k">receive</span>
-    <span class="p">{</span><span class="n">result</span><span class="p">,</span> <span class="nv">Tag</span><span class="p">,</span> <span class="nv">Result</span><span class="p">}</span> <span class="o">-&gt;</span>
-        <span class="n">ok</span>
-<span class="k">end</span><span class="p">.</span>
-</pre></div>
+<div class="highlight highlight-source-erlang"><pre><span class="pl-smi">Tag</span> <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">send_query</span>(<span class="pl-smi">Client</span>, <span class="pl-s"><span class="pl-pds">"</span>SELECT * FROM users;<span class="pl-pds">"</span></span>),
+<span class="pl-k">receive</span>
+    {<span class="pl-c1">result</span>, <span class="pl-smi">Tag</span>, <span class="pl-smi">Result</span>} -&gt;
+        <span class="pl-c1">ok</span>
+<span class="pl-k">end</span>.</pre></div>
 
 <p>In situations where you do not need to wait for the response at all, it's perfectly fine to produce this sort of pattern:</p>
 
-<div class="highlight highlight-erlang"><pre><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Client</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">new_client</span><span class="p">(),</span>
-<span class="nn">cqerl</span><span class="p">:</span><span class="nf">send_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="nl">#cql_query</span><span class="p">{</span><span class="n">statement</span><span class="o">=</span><span class="s">"UPDATE secrets SET value = null WHERE id = ?;"</span><span class="p">,</span>
-                                    <span class="n">values</span><span class="o">=</span><span class="p">[{</span><span class="n">id</span><span class="p">,</span> <span class="o">&lt;&lt;</span><span class="s">"42"</span><span class="o">&gt;&gt;</span><span class="p">}]}),</span>
-<span class="nn">cqerl</span><span class="p">:</span><span class="nf">close_client</span><span class="p">(</span><span class="nv">Client</span><span class="p">).</span>
-</pre></div>
+<div class="highlight highlight-source-erlang"><pre>{<span class="pl-c1">ok</span>, <span class="pl-smi">Client</span>} <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">new_client</span>(),
+<span class="pl-en">cqerl</span>:<span class="pl-en">send_query</span>(<span class="pl-smi">Client</span>, <span class="pl-k">#</span><span class="pl-en">cql_query</span>{<span class="pl-smi">statement</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>UPDATE secrets SET value = null WHERE id = ?;<span class="pl-pds">"</span></span>,
+                                    <span class="pl-smi">values</span><span class="pl-k">=</span>[{<span class="pl-c1">id</span>, &lt;&lt;<span class="pl-s"><span class="pl-pds">"</span>42<span class="pl-pds">"</span></span>&gt;&gt;}]}),
+<span class="pl-en">cqerl</span>:<span class="pl-en">close_client</span>(<span class="pl-smi">Client</span>).</pre></div>
 
 <p>That is, you can grab a client only the send a query, then you can get rid of it. CQErl will still perform it,
 the difference being that no response will be sent back to you.</p>
@@ -153,51 +148,51 @@ the difference being that no response will be sent back to you.</p>
 </li>
 <li>Other queries will yield <code>void</code> if everything worked correctly.</li>
 <li>In any case, errors returned by cassandra in response to a query will be the return value (<code>{error, Reason}</code> in the synchronous case, and <code>{error, Tag, Reason}</code> in the asynchronous case).</li>
-</ul><h6>
-<a name="cql_result" class="anchor" href="#cql_result"><span class="octicon octicon-link"></span></a><code>#cql_result{}</code>
+</ul>
+
+<h6>
+<a id="cql_result" class="anchor" href="#cql_result" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>#cql_result{}</code>
 </h6>
 
 <p>The return value of <code>SELECT</code> queries will be a <code>#cql_result{}</code> record, which can be used to obtain rows as proplists and fetch more result if available</p>
 
-<div class="highlight highlight-erlang"><pre><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="p">_</span><span class="nv">SchemaChange</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">run_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="s">"CREATE TABLE users(id uuid, name varchar, password varchar);"</span><span class="p">),</span>
-<span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="n">void</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">run_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="nl">#cql_query</span><span class="p">{</span>
-    <span class="n">statement</span> <span class="o">=</span> <span class="s">"INSERT INTO users(id, name, password) VALUES(?, ?, ?);"</span><span class="p">,</span>
-    <span class="n">values</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="p">{</span><span class="n">id</span><span class="p">,</span> <span class="n">new</span><span class="p">},</span>
-        <span class="p">{</span><span class="n">name</span><span class="p">,</span> <span class="s">"matt"</span><span class="p">},</span>
-        <span class="p">{</span><span class="n">password</span><span class="p">,</span> <span class="s">"qwerty"</span><span class="p">}</span>
-    <span class="p">]</span>
-<span class="p">}),</span>
-<span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Result</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">run_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="s">"SELECT * FROM users;"</span><span class="p">).</span>
+<div class="highlight highlight-source-erlang"><pre>{<span class="pl-c1">ok</span>, <span class="pl-smi">_SchemaChange</span>} <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">run_query</span>(<span class="pl-smi">Client</span>, <span class="pl-s"><span class="pl-pds">"</span>CREATE TABLE users(id uuid, name varchar, password varchar);<span class="pl-pds">"</span></span>),
+{<span class="pl-c1">ok</span>, <span class="pl-c1">void</span>} <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">run_query</span>(<span class="pl-smi">Client</span>, <span class="pl-k">#</span><span class="pl-en">cql_query</span>{
+    <span class="pl-smi">statement</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>INSERT INTO users(id, name, password) VALUES(?, ?, ?);<span class="pl-pds">"</span></span>,
+    <span class="pl-smi">values</span> <span class="pl-k">=</span> [
+        {<span class="pl-c1">id</span>, <span class="pl-c1">new</span>},
+        {<span class="pl-c1">name</span>, <span class="pl-s"><span class="pl-pds">"</span>matt<span class="pl-pds">"</span></span>},
+        {<span class="pl-c1">password</span>, <span class="pl-s"><span class="pl-pds">"</span>qwerty<span class="pl-pds">"</span></span>}
+    ]
+}),
+{<span class="pl-c1">ok</span>, <span class="pl-smi">Result</span>} <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">run_query</span>(<span class="pl-smi">Client</span>, <span class="pl-s"><span class="pl-pds">"</span>SELECT * FROM users;<span class="pl-pds">"</span></span>).
 
-<span class="nv">Row</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">head</span><span class="p">(</span><span class="nv">Result</span><span class="p">),</span>
-<span class="nv">Tail</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">tail</span><span class="p">(</span><span class="nv">Result</span><span class="p">),</span>
-<span class="p">{</span><span class="nv">Row</span><span class="p">,</span> <span class="nv">Tail</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">next</span><span class="p">(</span><span class="nv">Result</span><span class="p">),</span>
-<span class="mi">1</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nb">size</span><span class="p">(</span><span class="nv">Result</span><span class="p">),</span>
-<span class="mi">0</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nb">size</span><span class="p">(</span><span class="nv">Tail</span><span class="p">),</span>
-<span class="n">empty_dataset</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">next</span><span class="p">(</span><span class="nv">Tail</span><span class="p">),</span>
-<span class="p">[</span><span class="nv">Row</span><span class="p">]</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">all_rows</span><span class="p">(</span><span class="nv">Result</span><span class="p">),</span>
+<span class="pl-smi">Row</span> <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">head</span>(<span class="pl-smi">Result</span>),
+<span class="pl-smi">Tail</span> <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">tail</span>(<span class="pl-smi">Result</span>),
+{<span class="pl-smi">Row</span>, <span class="pl-smi">Tail</span>} <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">next</span>(<span class="pl-smi">Result</span>),
+<span class="pl-c1">1</span> <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">size</span>(<span class="pl-smi">Result</span>),
+<span class="pl-c1">0</span> <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">size</span>(<span class="pl-smi">Tail</span>),
+<span class="pl-c1">empty_dataset</span> <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">next</span>(<span class="pl-smi">Tail</span>),
+[<span class="pl-smi">Row</span>] <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">all_rows</span>(<span class="pl-smi">Result</span>),
 
-<span class="o">&lt;&lt;</span><span class="s">"matt"</span><span class="o">&gt;&gt;</span> <span class="o">=</span> <span class="nn">proplists</span><span class="p">:</span><span class="nf">get_value</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nv">Row</span><span class="p">),</span>
-<span class="o">&lt;&lt;</span><span class="s">"qwerty"</span><span class="o">&gt;&gt;</span> <span class="o">=</span> <span class="nn">proplists</span><span class="p">:</span><span class="nf">get_value</span><span class="p">(</span><span class="n">password</span><span class="p">,</span> <span class="nv">Row</span><span class="p">).</span>
-</pre></div>
+&lt;&lt;<span class="pl-s"><span class="pl-pds">"</span>matt<span class="pl-pds">"</span></span>&gt;&gt; <span class="pl-k">=</span> <span class="pl-en">proplists</span>:<span class="pl-en">get_value</span>(<span class="pl-c1">name</span>, <span class="pl-smi">Row</span>),
+&lt;&lt;<span class="pl-s"><span class="pl-pds">"</span>qwerty<span class="pl-pds">"</span></span>&gt;&gt; <span class="pl-k">=</span> <span class="pl-en">proplists</span>:<span class="pl-en">get_value</span>(<span class="pl-c1">password</span>, <span class="pl-smi">Row</span>).</pre></div>
 
 <p><code>#cql_result{}</code> can also be used to fetch more result, synchronously or asynchronously</p>
 
-<div class="highlight highlight-erlang"><pre>
-<span class="k">case</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">has_more_pages</span><span class="p">(</span><span class="nv">Result</span><span class="p">)</span> <span class="k">of</span>
-    <span class="n">true</span> <span class="o">-&gt;</span> <span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Result2</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">fetch_more</span><span class="p">(</span><span class="nv">Result</span><span class="p">);</span>
-    <span class="n">false</span> <span class="o">-&gt;</span> <span class="n">ok</span>
-<span class="k">end</span><span class="p">,</span>
+<div class="highlight highlight-source-erlang"><pre>
+<span class="pl-k">case</span> <span class="pl-en">cqerl</span>:<span class="pl-en">has_more_pages</span>(<span class="pl-smi">Result</span>) <span class="pl-k">of</span>
+    <span class="pl-c1">true</span> -&gt; {<span class="pl-c1">ok</span>, <span class="pl-smi">Result2</span>} <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">fetch_more</span>(<span class="pl-smi">Result</span>);
+    <span class="pl-c1">false</span> -&gt; <span class="pl-c1">ok</span>
+<span class="pl-k">end</span>,
 
-<span class="nv">Tag2</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">fetch_more_async</span><span class="p">(</span><span class="nv">Result</span><span class="p">),</span>
-<span class="k">receive</span>
-    <span class="p">{</span><span class="n">result</span><span class="p">,</span> <span class="nv">Tag2</span><span class="p">,</span> <span class="nv">Result2</span><span class="p">}</span> <span class="o">-&gt;</span> <span class="n">ok</span>
-<span class="k">end</span><span class="p">.</span>
-</pre></div>
+<span class="pl-smi">Tag2</span> <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">fetch_more_async</span>(<span class="pl-smi">Result</span>),
+<span class="pl-k">receive</span>
+    {<span class="pl-c1">result</span>, <span class="pl-smi">Tag2</span>, <span class="pl-smi">Result2</span>} -&gt; <span class="pl-c1">ok</span>
+<span class="pl-k">end</span>.</pre></div>
 
 <h6>
-<a name="cql_schema_changed" class="anchor" href="#cql_schema_changed"><span class="octicon octicon-link"></span></a><code>#cql_schema_changed{}</code>
+<a id="cql_schema_changed" class="anchor" href="#cql_schema_changed" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>#cql_schema_changed{}</code>
 </h6>
 
 <p><code>#cql_schema_changed{}</code> is returned from queries that change the database schema somehow (e.g. <code>ALTER</code>, <code>DROP</code>, <code>CREATE</code>, and so on). It includes:</p>
@@ -207,8 +202,10 @@ the difference being that no response will be sent back to you.</p>
 </li>
 <li>The name of the <code>keyspace</code> where the change happened, as a binary</li>
 <li>If applicable, the name of <code>table</code> on which the change was applied, as a binary</li>
-</ol><h5>
-<a name="providing-options-along-queries" class="anchor" href="#providing-options-along-queries"><span class="octicon octicon-link"></span></a>Providing options along queries</h5>
+</ol>
+
+<h5>
+<a id="providing-options-along-queries" class="anchor" href="#providing-options-along-queries" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Providing options along queries</h5>
 
 <p>When performing queries, you can provide more information than just the query statement using the <code>#cql_query{}</code> record, which includes the following fields:</p>
 
@@ -218,41 +215,50 @@ the difference being that no response will be sent back to you.</p>
 <li><p>You can tell CQErl to consider a query <code>reusable</code> or not (see below for what that means). By default, it will detect binding variables and consider it reusable if it contains (named or not) any. Queries containing <em>named</em> binding variables will be considered reusable no matter what you set <code>reusable</code> to. If you explicitely set <code>reusable</code> to <code>false</code> on a query having positional variable bindings (<code>?</code>), you would provide values with in <code>{Type, Value}</code> pairs instead of <code>{Key, Value}</code>. </p></li>
 <li>You can specify how many rows you want in every result page using the <code>page_size</code> (integer) field. The devs at Cassandra recommend a value of 100 (which is the default).</li>
 <li>
-<p>You can also specify what <code>consistency</code> you want the query to be executed under. Possible values include (all defined in <a href="include/cqerl.hrl"><code>include/cqerl.hrl</code></a>):</p>
+<p>You can also specify what <code>consistency</code> you want the query to be executed under. Possible values include:</p>
 
 <ul>
-<li><code>?CQERL_CONSISTENCY_ANY</code></li>
+<li><code>any</code></li>
 <li>
-<code>?CQERL_CONSISTENCY_ONE</code><br>
+<code>one</code><br>
 </li>
 <li>
-<code>?CQERL_CONSISTENCY_TWO</code><br>
+<code>two</code><br>
 </li>
-<li><code>?CQERL_CONSISTENCY_THREE</code></li>
+<li><code>three</code></li>
 <li>
-<code>?CQERL_CONSISTENCY_QUORUM</code><br>
+<code>quorum</code><br>
 </li>
 <li>
-<code>?CQERL_CONSISTENCY_ALL</code><br>
+<code>all</code><br>
 </li>
-<li><code>?CQERL_CONSISTENCY_LOCAL_QUORUM</code></li>
-<li><code>?CQERL_CONSISTENCY_EACH_QUORUM</code></li>
-<li><code>?CQERL_CONSISTENCY_LOCAL_ONE</code></li>
+<li><code>local_quorum</code></li>
+<li><code>each_quorum</code></li>
+<li><code>local_one</code></li>
 </ul>
 </li>
-</ol><ol>
 <li>
 <p>In case you want to perform a <a href="http://www.datastax.com/documentation/cassandra/2.0/webhelp/index.html#cassandra/dml/dml_about_transactions_c.html">lightweight transaction</a> using <code>INSERT</code> or <code>UPDATE</code>, you can also specify the <code>serial_consistency</code> that will be use when performing it. Possible values are:</p>
 
 <ul>
-<li><code>?CQERL_CONSISTENCY_SERIAL</code></li>
-<li><code>?CQERL_CONSISTENCY_LOCAL_SERIAL</code></li>
+<li><code>serial</code></li>
+<li><code>local_serial</code></li>
 </ul>
 </li>
-</ol><h5>
-<a name="variable-bindings" class="anchor" href="#variable-bindings"><span class="octicon octicon-link"></span></a>Variable bindings</h5>
+</ol>
 
-<p>In the <code>#cql_query{}</code> record, you can provide <code>values</code> as a <code>proplists</code>, where the keys match the column names or binding variable names in the statement, in <strong>lowercase</strong>. </p>
+<h5>
+<a id="variable-bindings" class="anchor" href="#variable-bindings" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Variable bindings</h5>
+
+<p>In the <code>#cql_query{}</code> record, you can provide <code>values</code> as a <code>proplists</code>, where the keys match the column names or binding variable names in the statement, in <strong>lowercase</strong>.</p>
+
+<p>Example:</p>
+
+<div class="highlight highlight-source-erlang"><pre><span class="pl-c">% Deriving the value key from the column name</span>
+<span class="pl-k">#</span><span class="pl-en">cql_query</span>{<span class="pl-smi">statement</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>SELECT * FROM table1 WHERE id = ?<span class="pl-pds">"</span></span>, <span class="pl-smi">values</span><span class="pl-k">=</span>[{<span class="pl-c1">id</span>, <span class="pl-smi">SomeId</span>}]},
+
+<span class="pl-c">% Explicitly providing a binding variable name</span>
+<span class="pl-k">#</span><span class="pl-en">cql_query</span>{<span class="pl-smi">statement</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>SELECT * FROM table1 WHERE id = :id_value<span class="pl-pds">"</span></span>, <span class="pl-smi">values</span><span class="pl-k">=</span>[{<span class="pl-c1">id_value</span>, <span class="pl-smi">SomeId</span>}]},</pre></div>
 
 <p>Special cases include: </p>
 
@@ -267,34 +273,39 @@ the difference being that no response will be sent back to you.</p>
 <li>
 <code>UPDATE keyspace SET map['key'] = ? WHERE id = 1;</code>. The name for this variable binding is <code>value(map)</code>, where <code>map</code> is the name of the column.</li>
 <li>
-<p><code>UPDATE keyspace SET list[?] = 1 WHERE id = 1;</code>. The name for this variable binding is <code>idx(list)</code>, where <code>list</code> is the name of the column.</p>
+<code>UPDATE keyspace SET list[?] = 1 WHERE id = 1;</code>. The name for this variable binding is <code>idx(list)</code>, where <code>list</code> is the name of the column.</li>
+<li>
+<p><code>SELECT * FROM keyspace LIMIT ?</code>. The name for the <code>LIMIT</code> variable is <code>[limit]</code>.</p>
 
 <p>Also, when providing the value for a <code>uuid</code>-type column, you can give the value <code>new</code>, <code>strong</code> or <code>weak</code>, in which case CQErl will generate a random UUID (v4), with either a <em>strong</em> or <em>weak</em> number random generator.</p>
 
 <p>Finally, when providing the value for a <code>timeuuid</code> or <code>timestamp</code> column, you can give the value <code>now</code>, in which case CQErl will generate a normal timestamp, or a UUID (v1) matching the current date and time.</p>
 </li>
-</ul><h5>
-<a name="batched-queries" class="anchor" href="#batched-queries"><span class="octicon octicon-link"></span></a>Batched queries</h5>
+</ul>
+
+<h5>
+<a id="batched-queries" class="anchor" href="#batched-queries" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Batched queries</h5>
 
 <p>To perform batched queries (which can include any non-<code>SELECT</code> <a href="http://en.wikipedia.org/wiki/Data_manipulation_language">DML</a> statements), simply put one or more <code>#cql_query{}</code> records in a <code>#cql_query_batch{}</code> record, and run it in place of a normal <code>#cql_query{}</code>. <code>#cql_query_batch{}</code> include the following fields:</p>
 
 <ol>
 <li>The <code>consistency</code> level to apply when executing the batch of queries.</li>
-<li>The <code>mode</code> of the batch, which can be <code>?CQERL_BATCH_LOGGED</code>, <code>?CQERL_BATCH_UNLOGGED</code> or <code>?CQERL_BATCH_COUNTER</code> (declared in <a href="include/cqerl.hrl"><code>include/cqerl.hrl</code></a>). Running a batch in <em>unlogged</em> mode removes the performance penalty of enforcing atomicity. The <em>counter</em> mode should be used to perform batched mutation of counter values.</li>
+<li>The <code>mode</code> of the batch, which can be <code>logged</code>, <code>unlogged</code> or <code>counter</code>. Running a batch in <em>unlogged</em> mode removes the performance penalty of enforcing atomicity. The <em>counter</em> mode should be used to perform batched mutation of counter values.</li>
 <li>Finally, you must specify the list of <code>queries</code>.</li>
-</ol><div class="highlight highlight-erlang"><pre><span class="nv">InsertQ</span> <span class="o">=</span> <span class="nl">#cql_query</span><span class="p">{</span><span class="n">statement</span> <span class="o">=</span> <span class="s">"INSERT INTO users(id, name, password) VALUES(?, ?, ?);"</span><span class="p">},</span>
-<span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="n">void</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cqerl</span><span class="p">:</span><span class="nf">run_query</span><span class="p">(</span><span class="nv">Client</span><span class="p">,</span> <span class="nl">#cql_query_batch</span><span class="p">{</span>
-  <span class="n">mode</span><span class="o">=?</span><span class="nv">CQERL_BATCH_UNLOGGED</span><span class="p">,</span>
-  <span class="n">queries</span><span class="o">=</span><span class="p">[</span>
-    <span class="nv">InsertQ</span><span class="nl">#cql_query</span><span class="p">{</span><span class="n">values</span> <span class="o">=</span> <span class="p">[{</span><span class="n">id</span><span class="p">,</span> <span class="n">new</span><span class="p">},{</span><span class="n">name</span><span class="p">,</span> <span class="s">"sean"</span><span class="p">},{</span><span class="n">password</span><span class="p">,</span> <span class="s">"12312"</span><span class="p">}]},</span>
-    <span class="nv">InsertQ</span><span class="nl">#cql_query</span><span class="p">{</span><span class="n">values</span> <span class="o">=</span> <span class="p">[{</span><span class="n">id</span><span class="p">,</span> <span class="n">new</span><span class="p">},{</span><span class="n">name</span><span class="p">,</span> <span class="s">"jenna"</span><span class="p">},{</span><span class="n">password</span><span class="p">,</span> <span class="s">"11111"</span><span class="p">}]},</span>
-    <span class="nv">InsertQ</span><span class="nl">#cql_query</span><span class="p">{</span><span class="n">values</span> <span class="o">=</span> <span class="p">[{</span><span class="n">id</span><span class="p">,</span> <span class="n">new</span><span class="p">},{</span><span class="n">name</span><span class="p">,</span> <span class="s">"kate"</span><span class="p">},{</span><span class="n">password</span><span class="p">,</span> <span class="s">"foobar"</span><span class="p">}]}</span>
-  <span class="p">]</span>
-<span class="p">}).</span>
-</pre></div>
+</ol>
+
+<div class="highlight highlight-source-erlang"><pre><span class="pl-smi">InsertQ</span> <span class="pl-k">=</span> <span class="pl-k">#</span><span class="pl-en">cql_query</span>{<span class="pl-smi">statement</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>INSERT INTO users(id, name, password) VALUES(?, ?, ?);<span class="pl-pds">"</span></span>},
+{<span class="pl-c1">ok</span>, <span class="pl-c1">void</span>} <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">run_query</span>(<span class="pl-smi">Client</span>, <span class="pl-k">#</span><span class="pl-en">cql_query_batch</span>{
+  <span class="pl-smi">mode</span><span class="pl-k">=</span><span class="pl-c1">unlogged</span>,
+  <span class="pl-smi">queries</span><span class="pl-k">=</span>[
+    <span class="pl-smi">InsertQ</span><span class="pl-k">#</span><span class="pl-en">cql_query</span>{<span class="pl-smi">values</span> <span class="pl-k">=</span> [{<span class="pl-c1">id</span>, <span class="pl-c1">new</span>},{<span class="pl-c1">name</span>, <span class="pl-s"><span class="pl-pds">"</span>sean<span class="pl-pds">"</span></span>},{<span class="pl-c1">password</span>, <span class="pl-s"><span class="pl-pds">"</span>12312<span class="pl-pds">"</span></span>}]},
+    <span class="pl-smi">InsertQ</span><span class="pl-k">#</span><span class="pl-en">cql_query</span>{<span class="pl-smi">values</span> <span class="pl-k">=</span> [{<span class="pl-c1">id</span>, <span class="pl-c1">new</span>},{<span class="pl-c1">name</span>, <span class="pl-s"><span class="pl-pds">"</span>jenna<span class="pl-pds">"</span></span>},{<span class="pl-c1">password</span>, <span class="pl-s"><span class="pl-pds">"</span>11111<span class="pl-pds">"</span></span>}]},
+    <span class="pl-smi">InsertQ</span><span class="pl-k">#</span><span class="pl-en">cql_query</span>{<span class="pl-smi">values</span> <span class="pl-k">=</span> [{<span class="pl-c1">id</span>, <span class="pl-c1">new</span>},{<span class="pl-c1">name</span>, <span class="pl-s"><span class="pl-pds">"</span>kate<span class="pl-pds">"</span></span>},{<span class="pl-c1">password</span>, <span class="pl-s"><span class="pl-pds">"</span>foobar<span class="pl-pds">"</span></span>}]}
+  ]
+}).</pre></div>
 
 <h5>
-<a name="reusable-queries" class="anchor" href="#reusable-queries"><span class="octicon octicon-link"></span></a>Reusable queries</h5>
+<a id="reusable-queries" class="anchor" href="#reusable-queries" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Reusable queries</h5>
 
 <p>If any of the following is true:</p>
 
@@ -303,20 +314,24 @@ the difference being that no response will be sent back to you.</p>
 </li>
 <li>the query contains positional variable bindings (<code>?</code>) and you did not explicitely <code>reusable</code> to false</li>
 <li>the query contains named variable bindings (<code>:name</code>) (ignores the value of <code>reusable</code>)</li>
-</ul><p>the query is considered <em>reusable</em>. This means that the first time this query will be performed, CQErl will ask the connected Cassandra node to prepare the query, after which, internally, a query ID will be used instead of the query statement when executing it. That particular cassandra node will hold on to the prepared query on its side and subsequent queries <em>that use exactly the same statement</em> <a href="http://www.datastax.com/dev/blog/client-side-improvements-in-cassandra-2-0">will be performed faster and with less network traffic</a>.</p>
+</ul>
+
+<p>the query is considered <em>reusable</em>. This means that the first time this query will be performed, CQErl will ask the connected Cassandra node to prepare the query, after which, internally, a query ID will be used instead of the query statement when executing it. That particular cassandra node will hold on to the prepared query on its side and subsequent queries <em>that use exactly the same statement</em> <a href="http://www.datastax.com/dev/blog/client-side-improvements-in-cassandra-2-0">will be performed faster and with less network traffic</a>.</p>
 
 <p>CQErl can tell which query has been previously prepared on which node by keeping a local cache, so all of this happens correctly and transparently.</p>
 
 <h5>
-<a name="data-types" class="anchor" href="#data-types"><span class="octicon octicon-link"></span></a>Data types</h5>
+<a id="data-types" class="anchor" href="#data-types" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Data types</h5>
 
 <p>Here is a correspondance of cassandra column types with their equivalent Erlang types (bold denotes what will used in result sets, the rest is what is accepted).</p>
 
 <table>
-<thead><tr>
+<thead>
+<tr>
 <th>Cassandra Column Type</th>
 <th>Erlang types</th>
-</tr></thead>
+</tr>
+</thead>
 <tbody>
 <tr>
 <td>ascii</td>
@@ -396,13 +411,22 @@ the difference being that no response will be sent back to you.</p>
 <code>{X1, X2, X3, X4}</code> (IPv4), <code>{Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8}</code> (IPv6), string or binary</td>
 </tr>
 </tbody>
-</table><h3>
-<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h3>
+</table>
+
+<h3>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h3>
 
 <p>Just include this repository in your project's <code>rebar.config</code> file and run <code>./rebar get-deps</code>. See <a href="https://github.com/rebar/rebar">rebar</a> for more details on how to use rebar for Erlang project management.</p>
 
 <h3>
-<a name="tests" class="anchor" href="#tests"><span class="octicon octicon-link"></span></a>Tests</h3>
+<a id="compatibility" class="anchor" href="#compatibility" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Compatibility</h3>
+
+<p>As said earlier, this library uses Cassandra's newest native protocol version (2), which is said to perform better than the older Thrift-based interface. It also speaks CQL version 3, and uses new features available in Cassandra 2.X, such as paging, parametrization, query preparation and so on.</p>
+
+<p>All this means is that this library works with Cassandra 2.X, configured to enable the native protocol. <a href="http://www.datastax.com/documentation/cassandra/2.0/cassandra/configuration/configCassandra_yaml_r.html">This documentation page</a> gives details about the how to configure this protocol. In the <code>cassandra.yaml</code> configuration file of your Cassandra installation, the <code>start_native_transport</code> need to be set to true and you need to take note of the value for <code>native_transport_port</code>, which is the port used by this library.</p>
+
+<h3>
+<a id="tests" class="anchor" href="#tests" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Tests</h3>
 
 <p>CQErl includes a test suite that you can run yourself, especially if you plan to contribute to this project. </p>
 
@@ -411,8 +435,10 @@ the difference being that no response will be sent back to you.</p>
 <li>Edit <code>test/test.config</code> and put your own cassandra's configurations</li>
 <li>At the project's top directory, run <code>make test</code>
 </li>
-</ol><h3>
-<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h3>
+</ol>
+
+<h3>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h3>
 
 <p>The MIT License (MIT)</p>
 
