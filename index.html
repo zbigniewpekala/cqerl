@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Cqerl by matehat</title>
+    <title>CQErl by matehat</title>
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/github-dark.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
@@ -31,7 +31,7 @@
 
       <section>
         <div id="title">
-          <h1>Cqerl</h1>
+          <h1>CQErl</h1>
           <p>Native Erlang CQL driver</p>
           <hr>
           <span class="credits left">Project maintained by <a href="https://github.com/matehat">matehat</a></span>
@@ -41,7 +41,7 @@
         <h1>
 <a id="cqerl" class="anchor" href="#cqerl" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>CQErl</h1>
 
-<p>Native Erlang client for CQL3 over Cassandra's binary protocol v4 (a.k.a. what you want as a client for Cassandra).</p>
+<p>Native Erlang client for CQL3 over Cassandra's latest binary protocol v4.</p>
 
 <p><a href="#usage"><strong>Usage</strong></a> · <a href="#connecting">Connecting</a> · <a href="#performing-queries">Performing queries</a> · <a href="#providing-options-along-queries">Query options</a> · <a href="#batched-queries">Batched queries</a> · <a href="#reusable-queries">Reusable queries</a> · <a href="#data-types">Data types</a></p>
 
@@ -50,7 +50,7 @@
 <h3>
 <a id="at-a-glance" class="anchor" href="#at-a-glance" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>At a glance</h3>
 
-<p>CQErl offers a simple Erlang interface to Cassandra using the latest CQL version (v3). The main features include:</p>
+<p>CQErl offers a simple Erlang interface to Cassandra using the latest CQL version. The main features include:</p>
 
 <ul>
 <li>Automatic (and configurable) connection pools using <a href="https://github.com/seth/pooler">pooler</a>
@@ -71,6 +71,14 @@
 <h3>
 <a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h3>
 
+<h4>
+<a id="pooler-mode" class="anchor" href="#pooler-mode" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Pooler Mode</h4>
+
+<p>This is the default/original mode. It uses <a href="https://github.com/seth/pooler">pooler</a> to manage connections, and
+has been around for quite a while, so is reasonably well tested. It does,
+however, have a couple of performance bottlenecks that may limit scalability on
+larger or more heaviliy loaded systems.</p>
+
 <h5>
 <a id="connecting" class="anchor" href="#connecting" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Connecting</h5>
 
@@ -82,9 +90,27 @@
 
 <div class="highlight highlight-source-erlang"><pre><span class="pl-en">cqerl</span>:<span class="pl-en">close_client</span>(<span class="pl-smi">Client</span>).</pre></div>
 
+<h4>
+<a id="hash-mode" class="anchor" href="#hash-mode" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Hash Mode</h4>
+
+<p>Hash mode is a new mode which uses a hash of the user process's PID to allocate
+clients, in a similar way to the system used by <a href="https://github.com/ferd/dispcount">dispcount</a>. To enable this
+mode, set</p>
+
+<div class="highlight highlight-source-erlang"><pre>{<span class="pl-c1">mode</span>, <span class="pl-c1">hash</span>}</pre></div>
+
+<p>in your application config (see below). In this mode, rather than calling
+<code>cqerl:new_client/2</code>, call <code>cqerl:get_client/2</code> with the same arguments.
+Calling <code>cqerl:close_client/1</code> is <em>not</em> required in hash mode (but will do no
+harm). See the comments at the top of <code>cqerl_hash.erl</code> for a full description
+of the behaviour of this mode.</p>
+
+<h4>
+<a id="all-modes" class="anchor" href="#all-modes" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>All modes</h4>
+
 <ol>
-<li><p>The first argument to <code>cqerl:new_client/2</code> or <code>cqerl_new_client/1</code> is the node to which you wish to connect as <code>{Ip, Port}</code>. If empty, it defaults to <code>{"127.0.0.1", 9042}</code>, and <code>Ip</code> can be given as a string, or as a tuple of components, either IPv4 or IPv6.</p></li>
-<li><p>The second possible argument (when using <code>cqerl:new_client/2</code>) is a list of options, that include <code>auth</code> (mentionned below), <code>ssl</code> (which is <code>false</code> by default, but can be set to a list of SSL options) and <code>keyspace</code> (string or binary). Other options include <code>pool_max_size</code>, <code>pool_min_size</code> and <code>pool_cull_interval</code>, which are used to configure <a href="https://github.com/seth/pooler">pooler</a> (see its documentation to understand those options).</p></li>
+<li><p>The first argument to <code>cqerl:get_client/2</code>, <code>cqerl:new_client/2</code> or <code>cqerl_new_client/1</code> is the node to which you wish to connect as <code>{Ip, Port}</code>. If empty, it defaults to <code>{"127.0.0.1", 9042}</code>, and <code>Ip</code> can be given as a string, or as a tuple of components, either IPv4 or IPv6.</p></li>
+<li><p>The second possible argument (when using <code>cqerl:get_client/2</code> or <code>cqerl:new_client/2</code>) is a list of options, that include <code>auth</code> (mentionned below), <code>ssl</code> (which is <code>false</code> by default, but can be set to a list of SSL options) and <code>keyspace</code> (string or binary). Other options include <code>pool_max_size</code>, <code>pool_min_size</code>, and <code>pool_cull_interval</code> which are used to configure <a href="https://github.com/seth/pooler">pooler</a> (see its documentation to understand those options), and <code>protocol_version</code> to <a href="#connecting-to-older-cassandra-instances">connect to older Cassandra instances</a>.</p></li>
 </ol>
 
 <p>If you've set simple username/password authentication scheme on Cassandra, you can provide those to CQErl</p>
@@ -107,6 +133,18 @@
 ]</pre></div>
 
 <p>Doing so will fire up connection pools as soon as the CQErl application is started. So when later on you call <code>cqerl:new_client</code>, chances are you will hit a preallocated connection (unless they're so busy that CQErl needs to fire up new ones). In fact, if you provide the <code>cassandra_nodes</code> environment variable, you can call <code>cqerl:new_client/0</code>, which chooses an available client at random.</p>
+
+<h5>
+<a id="options" class="anchor" href="#options" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Options</h5>
+
+<p>There are two application environment variables that may be set to change query behaviour:</p>
+
+<ul>
+<li>
+<code>{maps, true}</code> will cause query result rows to be returned as maps instead of proplists</li>
+<li>
+<code>{text_uuids, true}</code> will cause <code>timeuuid</code> and <code>uuid</code> fields to be returned as binary strings in canonical form (eg <code>&lt;&lt;"5620c844-e98d-11e5-b97b-08002719e96e"&gt;&gt;</code>) rather than pure binary.</li>
+</ul>
 
 <h5>
 <a id="performing-queries" class="anchor" href="#performing-queries" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Performing queries</h5>
@@ -414,6 +452,22 @@ the difference being that no response will be sent back to you.</p>
 </table>
 
 <h3>
+<a id="connecting-to-older-cassandra-instances" class="anchor" href="#connecting-to-older-cassandra-instances" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Connecting to older Cassandra instances</h3>
+
+<p>By default, this client library assumes we're talking to a 2.2+ or 3+ instance of Cassandra. 2.1.x the latest native protocol (v4) which is required to use some of the newest datatypes and optimizations. To tell CQErl to use the older protocol version (v3), which is required to connect to a 2.1.x instance of Cassandra, you can set the <code>protocol_version</code> option to the integer <code>3</code>, in your configuration file, i.e.</p>
+
+<div class="highlight highlight-source-erlang"><pre>[
+  {<span class="pl-c1">cqerl</span>, [
+            {<span class="pl-c1">cassandra_nodes</span>, [ { <span class="pl-s"><span class="pl-pds">"</span>127.0.0.1<span class="pl-pds">"</span></span>, <span class="pl-c1">9042</span> } ]},
+            {<span class="pl-c1">protocol_version</span>, <span class="pl-c1">3</span>}
+          ]},
+]</pre></div>
+
+<p>or in a <code>cqerl:new_client/2</code> or <code>cqerl:get_client/2</code> call</p>
+
+<div class="highlight highlight-source-erlang"><pre>{<span class="pl-c1">ok</span>, <span class="pl-smi">Client</span>} <span class="pl-k">=</span> <span class="pl-en">cqerl</span>:<span class="pl-en">new_client</span>(<span class="pl-s"><span class="pl-pds">"</span>127.0.0.1:9042<span class="pl-pds">"</span></span>, [{<span class="pl-c1">protocol_version</span>, <span class="pl-c1">3</span>}, {<span class="pl-c1">keyspace</span>, <span class="pl-c1">oper</span>}]).</pre></div>
+
+<h3>
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h3>
 
 <p>Just include this repository in your project's <code>rebar.config</code> file and run <code>./rebar get-deps</code>. See <a href="https://github.com/rebar/rebar">rebar</a> for more details on how to use rebar for Erlang project management.</p>
@@ -421,9 +475,9 @@ the difference being that no response will be sent back to you.</p>
 <h3>
 <a id="compatibility" class="anchor" href="#compatibility" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Compatibility</h3>
 
-<p>As said earlier, this library uses Cassandra's newest native protocol version (2), which is said to perform better than the older Thrift-based interface. It also speaks CQL version 3, and uses new features available in Cassandra 2.X, such as paging, parametrization, query preparation and so on.</p>
+<p>As said earlier, this library uses Cassandra's newest native protocol versions (v4, or v3 <a href="#connecting-to-older-cassandra-instances">optionally</a>), which is said to perform better than the older Thrift-based interface. It also speaks CQL version 3, and uses new features available in Cassandra 2.X, such as paging, parametrization, query preparation and so on.</p>
 
-<p>All this means is that this library works with Cassandra 2.X, configured to enable the native protocol. <a href="http://www.datastax.com/documentation/cassandra/2.0/cassandra/configuration/configCassandra_yaml_r.html">This documentation page</a> gives details about the how to configure this protocol. In the <code>cassandra.yaml</code> configuration file of your Cassandra installation, the <code>start_native_transport</code> need to be set to true and you need to take note of the value for <code>native_transport_port</code>, which is the port used by this library.</p>
+<p>All this means is that this library works with Cassandra 2.1.x (2.2+ or 3+ recommended), configured to enable the native protocol. <a href="http://www.datastax.com/documentation/cassandra/2.0/cassandra/configuration/configCassandra_yaml_r.html">This documentation page</a> gives details about the how to configure this protocol. In the <code>cassandra.yaml</code> configuration file of your Cassandra installation, the <code>start_native_transport</code> need to be set to true and you need to take note of the value for <code>native_transport_port</code>, which is the port used by this library.</p>
 
 <h3>
 <a id="tests" class="anchor" href="#tests" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Tests</h3>
